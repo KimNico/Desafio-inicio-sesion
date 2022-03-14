@@ -1,91 +1,62 @@
-const db_obj = require("../db/mariadb");
-const db = db_obj.client;
-
-class ProductoController {
-  constructor(tabla) {
-    this.table = tabla;
-    this.existTable();
+class ProdcutoController{
+  constructor(){
+    this.productos=[];
+  }
+  getProductos(){
+    if(this.productos == 0){
+      return {error:'No se encuentra en producto'}
+    }
+    return this.productos
+  }
+  getProductosById(id){
+    let producto = this.productos.filter(prod => Number(prod.id)== Number(id))
+    if(this.productos == 0){
+      return {error:'No se encuentra en producto'}
+    }
+    return this.productos
+  }
+  deleteProductoById({id}){
+    let exist = false;
+    for (let i = 0; i < this.productos.length; i++) {
+      if (Number(this.productos[i].id) === Number(id)) {
+        this.productos.splice(i, 1);
+        exist = true;
+      }
+    }
+    if (exist) return this.productos;
+    return { error: 'producto no encontrado' };
+  }
+  addProducto(product) {
+    const { titulo, precio, foto } = product;
+    let id = 0;
+    if (this.productos.length < 1) {
+      id = 1;
+      this.productos.push({ id, titulo, precio, foto });
+    } else {
+      id = this.productos[this.productos.length - 1].id + 1;
+      this.productos.push({ id, titulo, precio, foto });
+    }
+    console.log(id);
+    return product;
   }
 
-  async existTable() {
-    try {
-      let exist = await db.schema.hasTable(this.table).then(data => {
-        if (!data) this.createTable()
-      });
-      return exist;
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  updateProductoById({ titulo, precio, foto }, { id }){
 
-  async createTable() {
-    try {
-      await db.schema.createTable(this.table, table => {
-        table.increments("id").primary
-        table.string("nombre")
-        table.float("precio")
-        table.string("foto")
-      });
-    } catch (error) {
-      console.log(error)
+    let exist = false;
+    let prod = 0;
+    for (let i = 0; i < this.productos.length; i++) {
+      if (Number(this.productos[i].id) === Number(id)) {
+        if (title) this.productos[i].titulo = titulo;
+        if (price) this.productos[i].precio = precio;
+        if (thumbnail) this.productos[i].foto = foto;
+        if (id) this.productos[i].id = id;
+        exist = true;
+        prod = i;
+      }
     }
-  };
-
-  async getProductos() {
-    try {
-      let response = await db.from(this.table);
-      if (response.length === 0) return { error: 'productos no encontrados' };
-      return response;
-    } catch (error) {
-      console.log(error);
-    }
+    if (!exist) return { error: 'producto no encontrado' };
+    return this.productos[prod];
   }
+}
 
-  async getProductoById(id) {
-    try {
-      let item = await db.from(this.table).select('id', 'nombre', 'precio', 'foto').where({ id: id });
-      if (item.length === 0) return { error: 'producto no encontrado' };
-      return item;
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async deleteProductById( id ) {
-    try {
-      let response = await db.from(this.table).where({ id: id }).del();
-      if (response) return `Producto con id ${id} eliminado.`;
-      return { error: 'producto no encontrado' };
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async addProduct(product) {
-    try {
-      const { title, price, thumbnail } = product;
-      let data = {
-        nombre: title,
-        precio: price,
-        foto: thumbnail
-      };
-      await db.from(this.table).insert(data);
-      return resp;
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async updateProductById( {nombre, precio, foto}, id ) {
-    try {
-      if (nombre) await db.from(this.table).where({ id: id }).update({ nombre });
-      if (precio) await db.from(this.table).where({ id: id }).update({ precio });
-      if (foto) await db.from(this.table).where({ id: id }).update({ foto });
-      return await db.from(this.table).select('id', 'nombre', 'precio', 'foto').where({ id: id });;
-    } catch (error) {
-      console.log(error);
-    }
-  }
-};
-
-module.exports = ProductoController;
+module.exports= ProdcutoController
